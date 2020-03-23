@@ -13,19 +13,18 @@
 	        template: '<receipt-list></receipt-list>',
 	        title: 'Receipts',
 	    }).
-	    when('/receipt-pkg/receipt/add', {
-	        template: '<receipt-form></receipt-form>',
-	        title: 'Add Receipt',
-	    }).
-	    when('/receipt-pkg/receipt/edit/:id', {
+	    // when('/receipt-pkg/receipt/add', {
+	    //     template: '<receipt-form></receipt-form>',
+	    //     title: 'Add Receipt',
+	    // }).
+	    when('/receipt-pkg/receipt/view/:id', {
 	        template: '<receipt-form></receipt-form>',
 	        title: 'Edit Receipt',
 	    });
 	}]);
 
-    //JOURNAL VOUCHER
-    var receipt_list_template_url = "{{asset($receipt_pkg_prefix.'/public/themes/'.$theme.'/receipt-pkg/receipt/list.html')}}";
-    var receipt_form_template_url = "{{asset($receipt_pkg_prefix.'/public/themes/'.$theme.'/receipt-pkg/receipt/form.html')}}";
+     var receipt_list_template_url = "{{asset($receipt_pkg_prefix.'/public/themes/'.$theme.'/receipt-pkg/receipt/list.html')}}";
+    var receipt_view_template_url = "{{asset($receipt_pkg_prefix.'/public/themes/'.$theme.'/receipt-pkg/receipt/view.html')}}";
 
 </script>
 <script type="text/javascript" src="{{asset($receipt_pkg_prefix.'/public/themes/'.$theme.'/receipt-pkg/receipt/controller.js')}}"></script>

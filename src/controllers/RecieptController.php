@@ -3,6 +3,7 @@
 namespace Abs\ReceiptPkg;
 use Abs\ReceiptPkg\Receipt;
 use App\Http\Controllers\Controller;
+use App\Config;
 use Auth;
 use Carbon\Carbon;
 use DB;
@@ -10,6 +11,7 @@ use Entrust;
 use Illuminate\Http\Request;
 use Validator;
 use Yajra\Datatables\Datatables;
+use Session;
 
 class ReceiptController extends Controller {
 
@@ -17,140 +19,170 @@ class ReceiptController extends Controller {
 		$this->data['theme'] = config('custom.admin_theme');
 	}
 
-	public function getReceiptList(Request $request) {
-		$receipts = Receipt::withTrashed()
-			->select([
-				'receipts.id',
-				'receipts.name',
-				DB::raw('COALESCE(receipts.description,"--") as description'),
-				DB::raw('IF(receipts.deleted_at IS NULL, "Active","Inactive") as status'),
-			])
-			->where('receipts.company_id', Auth::user()->company_id)
-			->where(function ($query) use ($request) {
-				if (!empty($request->name)) {
-					$query->where('receipts.name', 'LIKE', '%' . $request->name . '%');
-				}
-			})
-			->where(function ($query) use ($request) {
-				if ($request->status == '1') {
-					$query->whereNull('receipts.deleted_at');
-				} else if ($request->status == '0') {
-					$query->whereNotNull('receipts.deleted_at');
-				}
-			})
-			->orderby('receipts.id', 'Desc');
-
-		return Datatables::of($receipts)
-			->addColumn('name', function ($receipt) {
-				$status = $receipt->status == 'Active' ? 'green' : 'red';
-				return '<span class="status-indicator ' . $status . '"></span>' . $receipt->name;
-			})
-			->addColumn('action', function ($receipt) {
-				$img1 = asset('public/themes/' . $this->data['theme'] . '/img/content/table/edit-yellow.svg');
-				$img1_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/edit-yellow-active.svg');
-				$img_delete = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-default.svg');
-				$img_delete_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-active.svg');
-				$output = '';
-				if (Entrust::can('edit-receipt')) {
-					$output .= '<a href="#!/receipt-pkg/receipt/edit/' . $receipt->id . '" id = "" title="Edit"><img src="' . $img1 . '" alt="Edit" class="img-responsive" onmouseover=this.src="' . $img1_active . '" onmouseout=this.src="' . $img1 . '"></a>';
-				}
-				if (Entrust::can('delete-receipt')) {
-					$output .= '<a href="javascript:;" data-toggle="modal" data-target="#receipt-delete-modal" onclick="angular.element(this).scope().deleteReceipt(' . $receipt->id . ')" title="Delete"><img src="' . $img_delete . '" alt="Delete" class="img-responsive delete" onmouseover=this.src="' . $img_delete_active . '" onmouseout=this.src="' . $img_delete . '"></a>';
-				}
-				return $output;
-			})
-			->make(true);
-	}
-
-	public function getReceiptFormData(Request $request) {
-		$id = $request->id;
-		if (!$id) {
-			$receipt = new Receipt;
-			$action = 'Add';
-		} else {
-			$receipt = Receipt::withTrashed()->find($id);
-			$action = 'Edit';
-		}
-		$this->data['receipt'] = $receipt;
-		$this->data['action'] = $action;
-		$this->data['theme'];
-
+	public function getReceiptSessionData(){
+		$this->data['status'] = Config::select('id','name')->get();
+		$this->data['search_invoice'] = Session::get('search_invoice');
+		$this->data['account_name'] = Session::get('account_name');
+		$this->data['account_code'] = Session::get('account_code');
+		$this->data['invoice_date'] = Session::get('invoice_date');
+		$this->data['invoice_number'] = Session::get('invoice_number');
+		$this->data['config_status'] = Session::get('config_status');
+		$this->data['success'] = true;
 		return response()->json($this->data);
 	}
 
-	public function saveReceipt(Request $request) {
-		// dd($request->all());
-		try {
-			$error_messages = [
-				'name.required' => 'Name is Required',
-				'name.unique' => 'Name is already taken',
-				'name.min' => 'Name is Minimum 3 Charachers',
-				'name.max' => 'Name is Maximum 64 Charachers',
-				'description.max' => 'Description is Maximum 255 Charachers',
-			];
-			$validator = Validator::make($request->all(), [
-				'name' => [
-					'required:true',
-					'min:3',
-					'max:64',
-					'unique:receipts,name,' . $request->id . ',id,company_id,' . Auth::user()->company_id,
-				],
-				'description' => 'nullable|max:255',
-			], $error_messages);
-			if ($validator->fails()) {
-				return response()->json(['success' => false, 'errors' => $validator->errors()->all()]);
-			}
-
-			DB::beginTransaction();
-			if (!$request->id) {
-				$receipt = new Receipt;
-				$receipt->created_by_id = Auth::user()->id;
-				$receipt->created_at = Carbon::now();
-				$receipt->updated_at = NULL;
-			} else {
-				$receipt = Receipt::withTrashed()->find($request->id);
-				$receipt->updated_by_id = Auth::user()->id;
-				$receipt->updated_at = Carbon::now();
-			}
-			$receipt->fill($request->all());
-			$receipt->company_id = Auth::user()->company_id;
-			if ($request->status == 'Inactive') {
-				$receipt->deleted_at = Carbon::now();
-				$receipt->deleted_by_id = Auth::user()->id;
-			} else {
-				$receipt->deleted_by_id = NULL;
-				$receipt->deleted_at = NULL;
-			}
-			$receipt->save();
-
-			DB::commit();
-			if (!($request->id)) {
-				return response()->json([
-					'success' => true,
-					'message' => 'Receipt Added Successfully',
-				]);
-			} else {
-				return response()->json([
-					'success' => true,
-					'message' => 'Receipt Updated Successfully',
-				]);
-			}
-		} catch (Exceprion $e) {
-			DB::rollBack();
-			return response()->json([
-				'success' => false,
-				'error' => $e->getMessage(),
-			]);
+	public function getReceiptList(Request $request) {
+		Session::put('search_invoice',$request->search['value']);
+		Session::put('account_name',$request->account_name);
+		Session::put('account_code',$request->account_code);
+		Session::put('invoice_date',$request->invoice_date);
+		Session::put('invoice_number',$request->invoice_number);
+		Session::put('config_status',$request->config_status);
+		$start_date = '';
+		$end_date = '';
+		if(!empty($request->invoice_date)){
+			$date_range = explode(' - ',$request->invoice_date);
+			$start_date = $date_range[0];
+			$end_date = $date_range[1];
 		}
+		
+		$receipts = Receipt::select(
+				DB::raw('IF(receipts.date IS NULL,"NA",DATE_FORMAT(receipts.date,"%d-%m-%Y")) as receipt_date'),
+				'receipts.receipt_of_id',
+				// 'customers.code as account_code',
+				// 'customers.name as account_name',
+				'receipts.id as id',
+				DB::raw('IF(receipts.description IS NULL,"NA",receipts.description) as description'),
+				DB::raw('IF(receipts.permanent_receipt_no IS NULL,"NA",receipts.permanent_receipt_no) as receipt_number'),
+				DB::raw('IF(receipt_ofs.name IS NULL,"NA",receipt_ofs.name) as receipt_of_name'),
+				// DB::raw('format(receipts.invoice_amount,0,"en_IN") as invoice_amount'),
+				// DB::raw('format(receipts.received_amount,0,"en_IN") as received_amount'),
+				// DB::raw('format((receipts.invoice_amount - receipts.received_amount),0,"en_IN") as balance_amount'),
+				DB::raw('IF(configs.name IS NULL,"NA",configs.name) as status_name'),
+				'receipts.permanent_receipt_no'
+			)
+			->leftJoin('configs as receipt_ofs','receipts.receipt_of_id','=','receipt_ofs.id')
+			->leftJoin('configs','receipts.status_id','=','configs.id')
+			//->leftJoin('customers','receipts.customer_id','=','customers.id')
+			->where('receipts.company_id', Auth::user()->company_id)
+			->where(function ($query) use ($request) {
+				if (!empty($request->account_code)) {
+					$query->where('customers.code', 'LIKE',$request->account_code);
+				}
+			})
+			->where(function ($query) use ($request) {
+				if (!empty($request->account_name)) {
+					$query->where('customers.name', 'LIKE',$request->account_name);
+				}
+			})
+			->where(function ($query) use ($request) {
+				if (!empty($request->invoice_number)) {
+					$query->where('receipts.invoice_number', 'LIKE',$request->invoice_number);
+				}
+			})
+			->where(function ($query) use ($request) {
+				if (!empty($request->config_status)) {
+					$query->where('configs.id',$request->config_status);
+				}
+			})
+			->where(function ($query) use ($request,$start_date,$end_date){
+				if (!empty($request->invoice_date) && ($start_date && $end_date)) {
+					$query->where('receipts.invoice_date','>=',$start_date)->where('receipts.invoice_date','<=',$end_date);
+				}
+			})
+			
+		;
+		$datatable = Datatables::of($receipts)
+			->addColumn('action', function ($receipts) {
+				$img_delete = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-default.svg');
+				$img_delete_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-active.svg');
+				$view = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye.svg');
+				$view_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye-active.svg');
+				$output = '';
+				//if (Entrust::can('view-invoice')) {
+					$output .= '<a href="#!/receipt-pkg/invoice/view/' . $receipts->id . '" id = "" title="view"><img src="' . $view . '" alt="Edit" class="img-responsive" onmouseover=this.src="' . $view_active . '" onmouseout=this.src="' . $view . '"></a>';
+				/*}
+				if (Entrust::can('delete-invoice')) {*/
+					$output .= '<a href="javascript:;" data-toggle="modal" data-target="#receipts-delete-modal" onclick="angular.element(this).scope().deleteReceipt(' . $receipts->id . ')" title="Delete"><img src="' . $img_delete . '" alt="Delete" class="img-responsive delete" onmouseover=this.src="' . $img_delete_active . '" onmouseout=this.src="' . $img_delete . '"></a>';
+				/*}*/
+				return $output;
+			});
+			// ->addColumn('account_name', function ($receipts) {
+				
+			// 	return $output;
+			// });
+			$datatable->make(true);
 	}
 
-	public function deleteReceipt(Request $request) {
+	public function getReceiptViewData(Request $request) {
+		$id = $request->id;
+		if (!$id) {
+			$this->data['message'] = 'Invalid Invoice';
+			$this->data['success'] = false;
+			return response()->json($this->data);
+		} else {
+			$this->data['invoice'] = $invoice = Invoice::select(
+				DB::raw('DATE_FORMAT(receipts.invoice_date,"%d-%m-%Y") as invoice_date'),
+				//'invoice_ofs.name as invoice_of_name',
+				//'receipts.invoice_of_id',
+				'receipts.invoice_number',
+				'receipts.id as id',
+				DB::raw('IF(receipts.remarks IS NULL,"NA",receipts.remarks) as description'),
+				DB::raw('format(receipts.invoice_amount,0,"en_IN") as invoice_amount'),
+				DB::raw('format(receipts.received_amount,0,"en_IN") as received_amount'),
+				DB::raw('format((receipts.invoice_amount - receipts.received_amount),0,"en_IN") as balance_amount'),
+				DB::raw('IF(configs.name IS NULL,"NA",configs.name) as status_name'),
+				'customers.code as account_code',
+				'customers.name as account_name',
+				'receipts.invoice_number'
+			)
+			//->leftJoin('configs as invoice_ofs','receipts.invoice_of_id','=','invoice_ofs.id')
+			->leftJoin('configs','receipts.status_id','=','configs.id')
+			->leftJoin('customers','receipts.customer_id','=','customers.id')
+			->where('receipts.company_id', /*Auth::user()->company_id*/2)
+			->where('receipts.id',$request->id)
+			->first();
+			$this->data['transactions'] = DB::table('invoice_details')
+				->where('invoice_id',$request->id)
+				->leftJoin('configs','invoice_details.status_id','=','configs.id')
+				//->leftJoin('configs as type','receipts.type_id','=','configs.id')
+				->select(
+					DB::raw('DATE_FORMAT(invoice_details.created_at,"%d-%m-%Y") as invoice_date'),
+					DB::raw('IF(configs.name IS NULL,"NA",configs.name) as status_name'),
+				DB::raw('format(invoice_details.received_amount,0,"en_IN") as received_amount'),
+				DB::raw('format((invoice_details.invoice_amount - invoice_details.received_amount),0,"en_IN") as balance_amount')
+					//,'type.name as type_name'
+				)
+			->get();
+		}
+			if(!$invoice){
+				$this->data['message'] = 'Invoice Not Found!!';
+				$this->data['success'] = false;
+				return response()->json($this->data);
+			}
+			$this->data['success'] = true;
+			return response()->json($this->data);
+	}
+
+	public function deleteReceiptData(Request $request) {
 		DB::beginTransaction();
 		try {
-			$receipt = Receipt::withTrashed()->where('id', $request->id)->forceDelete();
-			if ($receipt) {
+			$invoice = Invoice::where('id', $request->id)->delete();
+			$invoice_details = DB::table('invoice_details')->where('invoice_id', $request->id)->delete();
+			if ($invoice) {
+				$activity = new ActivityLog;
+				$activity->date_time = Carbon::now();
+				$activity->user_id = Auth::user()->id;
+				$activity->module = 'Invoice';
+				$activity->entity_id = $request->id;
+				$activity->entity_type_id = 1420;
+				$activity->activity_id = 282;
+				$activity->activity = 282;
+				$activity->details = json_encode($activity);
+				$activity->save();
+
 				DB::commit();
-				return response()->json(['success' => true, 'message' => 'Receipt Deleted Successfully']);
+				return response()->json(['success' => true, 'message' => 'Invoice Deleted Successfully']);
 			}
 		} catch (Exception $e) {
 			DB::rollBack();

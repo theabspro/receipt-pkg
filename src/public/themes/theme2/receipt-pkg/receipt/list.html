@@ -1,12 +1,13 @@
-<div class="content-wrap cndn-wrap">
+<div class="content-wrap bl-fixed">
     <div class="page-header">
         <div class="page-header-inner">
             <div class="page-header-content-left">
                 <div class="page-header-content title-block">
                     <h1 class="title type-2">Receipts (<span id="table_info"></span>)</h1>
+                    <!-- <p class="subtitle">Masters / JV Masters / JV Types</p> -->
                 </div><!-- Page Header Content -->
                 <div class="page-header-content button-block">
-                    <button class="btn btn-bordered" data-toggle="modal" data-target="#receipt-filter-modal"><i class="icon ion-md-funnel"></i>Filter</button>
+                    <button class="btn btn-bordered my-tooltip" data-toggle="modal" data-target="#modal-state-filter" ng-shortcut="'meta+shift+f'" ng-shortcut-click data-title="ctrl+shift+f"><i class="icon ion-md-funnel"></i>Filter</button>
                 </div><!-- Page Header Content -->
             </div><!-- Page Header Content Left -->
             <div class="page-header-content-right">
@@ -18,7 +19,7 @@
                 </div><!-- Page Header Content -->
                 <div class="page-header-content reset-block">
                     <div class="reset-wrap">
-                        <button class="btn-reset reset-tooltip refresh_table">
+                        <button class="btn-reset reset-tooltip refresh_table my-tooltip" ng-shortcut="'meta+shift+r'" ng-shortcut-click data-title="ctrl+shift+r">
                             <img class="img-responsive" src="./public/theme/img/content/reset.svg" alt="Reset" />
                         </button>
                     </div>
@@ -26,13 +27,13 @@
                 <div class="page-header-content search-block">
                     <div class="search_filter">
                         <label>
-                            <input type="search" id="search_receipt" class="form-control" placeholder="Search" />
-                            <button class="btn-clear" ng-click="clear_search()">Clear</button>
+                            <input type="search" id="search_state" class="form-control" placeholder="Search" autofocus />
+                            <button class="btn-clear my-tooltip" ng-click="clear_search()" ng-shortcut="'meta+shift+c'" ng-shortcut-click data-title="ctrl+shift+c">Clear</button>
                         </label>
                     </div><!-- Search Filter -->
                 </div><!-- Page Header Content -->
                 <div class="page-header-content button-block" ng-show="$ctrl.add_permission">
-                    <a href="#!/receipt-pkg/receipt/add" class="btn btn-primary">Add New</a>
+                    <a href="#!/location-pkg/state/add" class="btn btn-primary my-tooltip" ng-shortcut="'meta+shift+n'" ng-shortcut-click data-title="ctrl+shift+n">Add New</a>
                 </div><!-- Page Header Content -->
             </div><!-- Page Header Content Right -->
         </div><!-- Page Header Inner -->
@@ -41,22 +42,30 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <table class="table" id="receipts_list" style="width: 100% !important;">
+                    <table class="table " id="receipt_list" style="width: 100% !important;">
                         <thead>
                             <tr>
-                                <th class="action">Action</th>
-                                <th>Receipt Name</th>
+                                <th class="actions">Actions</th>
+                                <th>Receipt Date</th>
+                                <th>Receipt Number</th>
+                                <th>Receipt of</th>
+                               <!--  <th>Account Code</th>
+                                <th>Account Name</th>
+                                <th>Receipt Amount</th>
+                                <th>Settlement Amount</th>
+                                <th>Available Payment</th> -->
                                 <th>Description</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
-                    </table>
+                    </table><!-- Table -->
                 </div><!-- Column -->
             </div><!-- Row -->
         </div><!-- Container -->
     </div><!-- Page Main Content -->
 </div><!-- Content Wrap -->
-<!-- Filter Modal -->
-<div class="modal fade filter" id="receipt-filter-modal" role="dialog" aria-labelledby="myModalLabel">
+<!-- Modal Filter Start -->
+<div class="modal fade filter" id="modal-state-filter" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -64,39 +73,57 @@
                 <h5 class="modal-title" id="myModalLabel">Receipt Filter</h5>
             </div><!-- Modal Header -->
             <div class="modal-body">
-                <div class="modal-form">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Receipt Name</label>
-                                <input type="text" class="form-control" id="receipt_name" name="receipt_name" placeholder="Enter Receipt Name" autocomplete="off">
-                            </div><!-- Field -->
+                <div class="row modal-row">
+                    <div class="col-md-6">
+                            <div class="input-text form-group mb-0">
+                                <label>Receipt Date</label>
+                                <input date-range-picker id="daterange1" name="daterange" class="form-control date-picker" type="text" ng-model="$ctrl.daterange1" value="{{$ctrl.daterange1}}" placeholder="Select Receipt Date"/>
+                                <!-- Input Group -->
+                            </div>
                         </div><!-- Column -->
-                        <div class="col-md-6">
-                            <div class="input-text form-group">
-                                <label>Status</label>
-                                <md-select ng-model="$ctrl.receipt.status" md-on-close="clearSearchTerm()" data-md-container-class="selectdemoSelectHeader" ng-change="onSelectedStatus($ctrl.receipt.status)" placeholder="Select Status">
-                                    <md-select-header class="demo-select-header">
-                                        <input ng-model="searchTerm" type="search" placeholder="Search for a Status" class="demo-header-searchbox md-text">
-                                    </md-select-header>
-                                    <md-optgroup>
-                                        <md-option ng-value="status.id" ng-repeat="status in $ctrl.status | filter:searchTerm">{{status.name}}</md-option>
-                                    </md-optgroup>
-                                </md-select>
-                                <input type="hidden" class="form-control" name="status" id="status" value="">
-                            </div><!-- Field -->
-                        </div><!-- Column -->
-                        <div class="col-md-6">
-                            <button type="button" class="btn btn-rose" ng-click="reset_filter();$ctrl.receipt.status=''">Reset Filter</button>
-                        </div>
-                    </div><!-- Row -->
-                </div><!-- Modal Form -->
+                    <div class="col-md-6">
+                        <div class="input-text form-group">
+                            <label>Receipt Number</label>
+                            <input type="text" class="form-control" name="name" ng-keyup="loadDT()" placeholder="Enter Receipt Number" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.Receipt_number">
+                        </div><!-- Field -->
+                    </div><!-- Column -->
+                    <div class="col-md-6">
+                        <div class="input-text form-group">
+                            <label>Account Code</label>
+                            <input type="text" class="form-control" ng-keyup="loadDT()" name="account_code" id="account_code" placeholder="Enter Account Code" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.account_code">
+                        </div><!-- Field -->
+                    </div><!-- Column -->
+                    <div class="col-md-6">
+                        <div class="input-text form-group">
+                            <label>Account Name</label>
+                            <input type="text" class="form-control" ng-keyup="loadDT()" name="name" id="account_name" placeholder="Enter Account Name" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.account_name">
+                        </div><!-- Field -->
+                    </div><!-- Column -->
+                    <div class="col-md-6">
+                        <div class="input-text form-group">
+                            <label>Status</label>
+                            <md-select ng-model="$ctrl.config_status" md-on-close="clearSearchTerm()" data-md-container-class="selectdemoSelectHeader" ng-change="onSelectedStatus($ctrl.config_status)" placeholder="Select Status"  ng-change="loadDT()">
+                                <md-select-header class="demo-select-header">
+                                    <input ng-model="searchTerm1" type="search" placeholder="Search for a Status" class="demo-header-searchbox md-text">
+                                </md-select-header>
+                                <md-optgroup>
+                                    <md-option ng-value="status.id" ng-repeat="status in $ctrl.status | filter:searchTerm1">{{status.name}}</md-option>
+                                </md-optgroup>
+                            </md-select>
+                            <input type="hidden" ng-model="$ctrl.config_status" class="form-control" name="status" id="status" value="">
+                        </div><!-- Field -->
+                    </div><!-- Column -->
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-rose my-tooltip" ng-click="reset_filter();$ctrl.filter_state_country='';$ctrl.filter_state_status=''" ng-shortcut="'meta+shift+t'" ng-shortcut-click data-title="ctrl+shift+t">Reset Filter</button>
+                    </div>
+                </div><!-- Row -->
             </div><!-- Modal Body -->
         </div><!-- Modal Content -->
     </div><!-- Modal Dialog -->
 </div><!-- Modal -->
+<!--Modal Filter End-->
 <!-- Modal -->
-<div class="modal fade alert-modal failure" id="receipt-delete-modal" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade alert-modal failure" id="receipts-delete-modal" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -109,7 +136,6 @@
                 <button class="btn btn-grey" data-dismiss="modal" aria-label="Close">Cancel</button>
                 <button class="btn btn-rose" ng-click="deleteConfirm()" type="button" data-dismiss="modal" aria-label="Close">Yes</button>
             </div>
-        </div>
-    </div>
-</div>
-<!-- Modal -->
+        </div><!-- Modal Content -->
+    </div><!-- Modal Dialog -->
+</div><!-- Modal Content -->

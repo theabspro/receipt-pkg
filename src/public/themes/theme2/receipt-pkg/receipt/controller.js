@@ -1,17 +1,54 @@
 app.component('receiptList', {
     templateUrl: receipt_list_template_url,
-    controller: function($http, $location, HelperService, $scope, $routeParams, $rootScope, $location, $mdSelect, $element) {
+    controller: function($http, $location, HelperService, $scope, $routeParams, $rootScope, $element, $mdSelect) {
         $scope.loading = true;
         var self = this;
+        self.theme = admin_theme;
+        //  if (!self.hasPermission('receipts')) {
+        //     window.location = "#!/page-permission-denied";
+        //     return false;
+        // }
+        $('#search_receipt').focus();
+        
+
+        $http.get(
+                laravel_routes['getReceiptSessionData']
+            ).then(function(response) {
+                if(response.data.success){
+                    self.status = response.data.status;
+                    self.account_code = response.data.account_code;
+                    self.account_name = response.data.account_name;
+                    self.config_status = response.data.config_status;
+                    self.receipt_date = response.data.receipt_date;
+                    $('#daterange1').val(response.data.receipt_date);
+                    $('#search_receipt').val(response.data.search_receipt);
+                }
+            });
         self.hasPermission = HelperService.hasPermission;
-        self.add_permission = self.hasPermission('add-receipt');
+        /*if (!self.hasPermission('receipts')) {
+            window.location = "#!/page-permission-denied";
+            return false;
+        }*/
+
+        $('.docDatePicker').bootstrapDP({
+            endDate: 'today',
+            todayHighlight: true
+        });
+
+        $('#reference_date').datepicker({
+            dateFormat: 'dd-mm-yy',
+            maxDate: '0',
+            todayHighlight: true,
+            autoclose: true
+        });
         var table_scroll;
-        table_scroll = $('.page-main-content').height() - 37;
-        var dataTable = $('#receipts_list').DataTable({
+        table_scroll = $('.page-main-content.list-page-content').height() - 37;
+        setTimeout(function(){
+        var dataTable = $('#receipt_list').DataTable({
             "dom": cndn_dom_structure,
             "language": {
-                // "search": "",
-                // "searchPlaceholder": "Search",
+                "search": "",
+                "searchPlaceholder": "Search",
                 "lengthMenu": "Rows _MENU_",
                 "paginate": {
                     "next": '<i class="icon ion-ios-arrow-forward"></i>',
@@ -33,7 +70,6 @@ app.component('receiptList', {
             serverSide: true,
             paging: true,
             stateSave: true,
-            ordering: false,
             scrollY: table_scroll + "px",
             scrollCollapse: true,
             ajax: {
@@ -41,15 +77,25 @@ app.component('receiptList', {
                 type: "GET",
                 dataType: "json",
                 data: function(d) {
-                    d.name = $('#receipt_name').val();
-                    d.status = $('#status').val();
+                    d.account_name = self.account_name;
+                    d.account_code = self.account_code;
+                    d.receipt_number = self.receipt_number;
+                    d.receipt_date = $('#daterange1').val();
+                    d.config_status = self.config_status;
                 },
             },
-
             columns: [
                 { data: 'action', class: 'action', name: 'action', searchable: false },
-                { data: 'name', name: 'receipts.name' },
+                { data: 'receipt_date', searchable: false},
+                { data: 'receipt_number', name: 'receipts.permanent_receipt_no' },
+                { data: 'receipt_of_name', name: 'configs.name' },
+                // { data: 'account_code', name: 'customers.code', searchable: false },
+                // { data: 'account_name', name: 'customers.name', searchable: false },
+                // { data: 'receipt_amount',  searchable: false },
+                // { data: 'received_amount',  searchable: false },
+                // { data: 'balance_amount',  searchable: false },
                 { data: 'description', name: 'receipts.description' },
+                { data: 'status_name', name: 'configs.name' },
             ],
             "infoCallback": function(settings, start, end, max, total, pre) {
                 $('#table_info').html(total)
@@ -60,29 +106,39 @@ app.component('receiptList', {
             }
         });
         $('.dataTables_length select').select2();
-
+        
         $('.refresh_table').on("click", function() {
-            $('#receipts_list').DataTable().ajax.reload();
+            $('#receipt_list').DataTable().ajax.reload();
         });
 
         $scope.clear_search = function() {
             $('#search_receipt').val('');
-            $('#receipts_list').DataTable().search('').draw();
+            $('#receipt_list').DataTable().search('').draw();
+            $('#search_receipt').focus();
+
         }
 
-        var dataTables = $('#receipts_list').dataTable();
+        var dataTables = $('#receipt_list').dataTable();
         $("#search_receipt").keyup(function() {
             dataTables.fnFilter(this.value);
+        $('#search_receipt').focus();
+
         });
+
+        //FOCUS ON SEARCH FIELD
+        setTimeout(function() {
+            $('div.dataTables_filter input').focus();
+        }, 2500);
 
         //DELETE
         $scope.deleteReceipt = function($id) {
+            alert();
             $('#receipt_id').val($id);
         }
         $scope.deleteConfirm = function() {
             $id = $('#receipt_id').val();
             $http.get(
-                laravel_routes['deleteReceipt'], {
+                laravel_routes['deleteReceiptData'], {
                     params: {
                         id: $id,
                     }
@@ -90,23 +146,19 @@ app.component('receiptList', {
             ).then(function(response) {
                 if (response.data.success) {
                     custom_noty('success', 'Receipt Deleted Successfully');
-                    $('#receipts_list').DataTable().ajax.reload(function(json) {});
+                    $('#receipt_list').DataTable().ajax.reload();
                     $location.path('/receipt-pkg/receipt/list');
+                    $('#search_receipt').focus();
+
                 }
             });
         }
-
-        //FOR FILTER
-        self.status = [
-            { id: '', name: 'Select Status' },
-            { id: '1', name: 'Active' },
-            { id: '0', name: 'Inactive' },
-        ];
         $element.find('input').on('keydown', function(ev) {
             ev.stopPropagation();
         });
         $scope.clearSearchTerm = function() {
             $scope.searchTerm = '';
+            $scope.searchTerm1 = '';
         };
         /* Modal Md Select Hide */
         $('.modal').bind('click', function(event) {
@@ -115,101 +167,62 @@ app.component('receiptList', {
             }
         });
 
-        $('#receipt_name').on('keyup', function() {
-            dataTables.fnFilter();
-        });
-        $scope.onSelectedStatus = function(val) {
-            $("#status").val(val);
-            dataTables.fnFilter();
-        }
+        var datatables = $('#receipt_list').dataTable();
         $scope.reset_filter = function() {
-            $("#receipt_name").val('');
-            $("#status").val('');
-            dataTables.fnFilter();
+            self.account_code = '';
+            self.account_name  = '';
+            self.receipt_number = '';
+            self.config_status = '';
+            $('#daterange1').val(null);
+            datatables.fnFilter();
         }
+        $scope.loadDT = function (){
+            datatables.fnFilter();
+            $('#search_receipt').focus();
 
+        }
         $rootScope.loading = false;
+        }, 2500);
     }
 });
+
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
-app.component('receiptForm', {
-    templateUrl: receipt_form_template_url,
-    controller: function($http, $location, HelperService, $scope, $routeParams, $rootScope) {
+app.component('receiptView', {
+    templateUrl: receipt_view_template_url,
+    controller: function($http, HelperService, $scope, $routeParams, $rootScope) {
         var self = this;
         self.hasPermission = HelperService.hasPermission;
+        // if (!self.hasPermission('view-receipt')) {
+        //     window.location = "#!/page-permission-denied";
+        //     return false;
+        // }
+        /*self.region_permission = self.hasPermission('regions');
+        self.city_permission = self.hasPermission('cities');*/
         self.angular_routes = angular_routes;
         $http.get(
-            laravel_routes['getReceiptFormData'], {
+            laravel_routes['getreceiptViewData'], {
                 params: {
-                    id: typeof($routeParams.id) == 'undefined' ? null : $routeParams.id,
+                    id: $routeParams.id,
                 }
             }
         ).then(function(response) {
-            // console.log(response);
             self.receipt = response.data.receipt;
-            self.action = response.data.action;
-            $rootScope.loading = false;
-            if (self.action == 'Edit') {
-                if (self.receipt.deleted_at) {
-                    self.switch_value = 'Inactive';
-                } else {
-                    self.switch_value = 'Active';
-                }
-            } else {
-                self.switch_value = 'Active';
-            }
+            self.transactions = response.data.transactions;
         });
-
-        var form_id = '#form';
-        var v = jQuery(form_id).validate({
-            ignore: '',
-            rules: {
-                'name': {
-                    required: true,
-                    minlength: 3,
-                    maxlength: 64,
-                },
-                'description': {
-                    minlength: 3,
-                    maxlength: 255,
-                },
-            },
-            submitHandler: function(form) {
-                let formData = new FormData($(form_id)[0]);
-                $('#submit').button('loading');
-                $.ajax({
-                        url: laravel_routes['saveReceipt'],
-                        method: "POST",
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                    })
-                    .done(function(res) {
-                        if (res.success == true) {
-                            custom_noty('success', res.message);
-                            $location.path('/receipt-pkg/receipt/list');
-                            $scope.$apply();
-                        } else {
-                            if (!res.success == true) {
-                                $('#submit').button('reset');
-                                var errors = '';
-                                for (var i in res.errors) {
-                                    errors += '<li>' + res.errors[i] + '</li>';
-                                }
-                                custom_noty('error', errors);
-                            } else {
-                                $('#submit').button('reset');
-                                $location.path('/receipt-pkg/receipt/list');
-                                $scope.$apply();
-                            }
-                        }
-                    })
-                    .fail(function(xhr) {
-                        $('#submit').button('reset');
-                        custom_noty('error', 'Something went wrong at server');
-                    });
-            }
+        /* Tab Funtion */
+        $('.btn-nxt').on("click", function() {
+            $('.editDetails-tabs li.active').next().children('a').trigger("click");
+            tabPaneFooter();
         });
+        $('.btn-prev').on("click", function() {
+            $('.editDetails-tabs li.active').prev().children('a').trigger("click");
+            tabPaneFooter();
+        });
+        $('.btn-pills').on("click", function() {
+            tabPaneFooter();
+        });
+        $scope.btnNxt = function() {}
+        $scope.prev = function() {}
     }
 });
