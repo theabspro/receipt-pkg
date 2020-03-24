@@ -4,10 +4,12 @@ app.component('receiptList', {
         $scope.loading = true;
         var self = this;
         self.theme = admin_theme;
-        //  if (!self.hasPermission('receipts')) {
-        //     window.location = "#!/page-permission-denied";
-        //     return false;
-        // }
+        self.hasPermission = HelperService.hasPermission;
+
+         if (!self.hasPermission('receipts')) {
+            window.location = "#!/page-permission-denied";
+            return false;
+        }
         $('#search_receipt').focus();
         
 
@@ -25,7 +27,6 @@ app.component('receiptList', {
                     $('#search_receipt').val(response.data.search_receipt);
                 }
             });
-        self.hasPermission = HelperService.hasPermission;
         /*if (!self.hasPermission('receipts')) {
             window.location = "#!/page-permission-denied";
             return false;
@@ -72,6 +73,7 @@ app.component('receiptList', {
             paging: true,
             stateSave: true,
             scrollY: table_scroll + "px",
+            scrollX: true,
             scrollCollapse: true,
             ajax: {
                 url: laravel_routes['getReceiptList'],
@@ -134,12 +136,12 @@ app.component('receiptList', {
 
         //DELETE
         $scope.deleteReceipt = function($id) {
-            alert($id);
+            // alert($id);
             $('#receipt_id').val($id);
         }
         $scope.deleteConfirm = function() {
             $id = $('#receipt_id').val();
-            console.log($id);
+            // console.log($id);
             $http.get(
                 laravel_routes['deleteReceiptData'], {
                     params: {
