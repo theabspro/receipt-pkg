@@ -2,19 +2,18 @@
 
 namespace Abs\ReceiptPkg;
 use Abs\ReceiptPkg\Receipt;
-use App\Http\Controllers\Controller;
-use App\Config;
-use App\Vendor;
-use App\Customer;
 use App\ActivityLog;
+use App\Config;
+use App\Customer;
+use App\Http\Controllers\Controller;
+use App\Vendor;
 use Auth;
 use Carbon\Carbon;
 use DB;
 use Entrust;
 use Illuminate\Http\Request;
-use Validator;
-use Yajra\Datatables\Datatables;
 use Session;
+use Yajra\Datatables\Datatables;
 
 class ReceiptController extends Controller {
 
@@ -22,10 +21,11 @@ class ReceiptController extends Controller {
 		$this->data['theme'] = config('custom.admin_theme');
 	}
 
-	public function getReceiptSessionData(){
+	public function getReceiptSessionData() {
 
 		$this->data['status'] = Config::select('id','name')->get()->prepend(['id' => '','name' => 'Select Status']);
 		$this->data['receipt_of'] = Config::select('id','name')->where('config_type_id',30)->get()->prepend(['id' => '','name' => 'Select Receipt Of']);
+
 		$this->data['search_invoice'] = Session::get('search_invoice');
 		$this->data['account_name'] = Session::get('account_name');
 		$this->data['account_code'] = Session::get('account_code');
@@ -37,16 +37,16 @@ class ReceiptController extends Controller {
 	}
 
 	public function getReceiptList(Request $request) {
-		Session::put('search_invoice',$request->search['value']);
-		Session::put('account_name',$request->account_name);
-		Session::put('account_code',$request->account_code);
-		Session::put('receipt_date',$request->receipt_date);
-		Session::put('receipt_number',$request->receipt_number);
-		Session::put('config_status',$request->config_status);
+		Session::put('search_invoice', $request->search['value']);
+		Session::put('account_name', $request->account_name);
+		Session::put('account_code', $request->account_code);
+		Session::put('receipt_date', $request->receipt_date);
+		Session::put('receipt_number', $request->receipt_number);
+		Session::put('config_status', $request->config_status);
 		$start_date = '';
 		$end_date = '';
-		if(!empty($request->receipt_date)){
-			$date_range = explode(' - ',$request->receipt_date);
+		if (!empty($request->receipt_date)) {
+			$date_range = explode(' - ', $request->receipt_date);
 			$start_date = $date_range[0];
 			$end_date = $date_range[1];
 		}
@@ -70,14 +70,15 @@ class ReceiptController extends Controller {
 			->leftJoin('customers','receipts.entity_id','=','customers.id')
 			->leftJoin('vendors','receipts.entity_id','=','vendors.id')
 			->where('receipts.company_id', Auth::user()->company_id)
+
 			->where(function ($query) use ($request) {
 				if (!empty($request->receipt_number)) {
-					$query->where('receipts.permanent_receipt_no', 'LIKE',$request->receipt_number);
+					$query->where('receipts.permanent_receipt_no', 'LIKE', $request->receipt_number);
 				}
 			})
-			->where(function ($query) use ($request,$start_date,$end_date){
+			->where(function ($query) use ($request, $start_date, $end_date) {
 				if (!empty($request->receipt_date) && ($start_date && $end_date)) {
-					$query->where('receipts.date','>=',$start_date)->where('receipts.date','<=',$end_date);
+					$query->where('receipts.date', '>=', $start_date)->where('receipts.date', '<=', $end_date);
 				}
 			});
 			if($request->receipt_of_id){
@@ -131,6 +132,7 @@ class ReceiptController extends Controller {
 			return $account_data ? '<span class="status-indicator ' . $status . '"></span>' . $account_data->code : '<span class="status-indicator ' . $status . '"></span>' . 'NA';
 		})
 		->make(true);
+
 	}
 
 	public function getReceiptViewData(Request $request) {
@@ -156,17 +158,17 @@ class ReceiptController extends Controller {
 				DB::raw('IF(configs.name IS NULL,"NA",configs.name) as status_name'),
 				'receipts.permanent_receipt_no'
 			)
-			->leftJoin('configs as receipt_ofs','receipts.receipt_of_id','=','receipt_ofs.id')
-			->leftJoin('configs','receipts.status_id','=','configs.id')
+				->leftJoin('configs as receipt_ofs', 'receipts.receipt_of_id', '=', 'receipt_ofs.id')
+				->leftJoin('configs', 'receipts.status_id', '=', 'configs.id')
 			//->leftJoin('customers','receipts.customer_id','=','customers.id')
-			->where('receipts.company_id', Auth::user()->company_id)
-			->where('receipts.id',$request->id)
-			->first();
+				->where('receipts.company_id', Auth::user()->company_id)
+				->where('receipts.id', $request->id)
+				->first();
 			$account_data = '';
-			if($receipt->receipt_of_id == 7620){
-				$account_data = Customer::where('id',$receipt->entity_id)->first();
-			}elseif($receipt->receipt_of_id == 7621){
-				$account_data = Vendor::where('id',$receipt->entity_id)->first();
+			if ($receipt->receipt_of_id == 7620) {
+				$account_data = Customer::where('id', $receipt->entity_id)->first();
+			} elseif ($receipt->receipt_of_id == 7621) {
+				$account_data = Vendor::where('id', $receipt->entity_id)->first();
 			}
 			$receipt->account_code = $account_data ? $account_data->code : '-';
 			$receipt->account_name = $account_data ? $account_data->name : '-';
@@ -183,13 +185,13 @@ class ReceiptController extends Controller {
 			// 	)
 			// ->get();
 		}
-			if(!$receipt){
-				$this->data['message'] = 'Receipt Not Found!!';
-				$this->data['success'] = false;
-				return response()->json($this->data);
-			}
-			$this->data['success'] = true;
+		if (!$receipt) {
+			$this->data['message'] = 'Receipt Not Found!!';
+			$this->data['success'] = false;
 			return response()->json($this->data);
+		}
+		$this->data['success'] = true;
+		return response()->json($this->data);
 	}
 
 	public function deleteReceiptData(Request $request) {

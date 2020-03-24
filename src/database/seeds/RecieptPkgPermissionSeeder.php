@@ -28,8 +28,8 @@ class ReceiptPkgPermissionSeeder extends Seeder {
 			[
 				'display_order' => 2,
 				'parent' => 'receipts',
-				'name' => 'edit-receipt',
-				'display_name' => 'Edit',
+				'name' => 'view-receipt',
+				'display_name' => 'View',
 			],
 			[
 				'display_order' => 3,
