@@ -18,8 +18,8 @@
 	    //     title: 'Add Receipt',
 	    // }).
 	    when('/receipt-pkg/receipt/view/:id', {
-	        template: '<receipt-form></receipt-form>',
-	        title: 'Edit Receipt',
+	        template: '<receipt-view></receipt-view>',
+	        title: 'View Receipt',
 	    });
 	}]);
 

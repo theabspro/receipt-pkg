@@ -5,15 +5,15 @@ Content Wrap -->
         <div class="page-header-inner">
             <div class="page-header-content-left">
                 <div class="page-header-content button-block">
-                    <a href="#!/invoice-pkg/invoice/list" type="button" class="btn-back btn-img">
+                    <a href="#!/receipt-pkg/receipt/list" type="button" class="btn-back btn-img">
                         <img class="img-responsive my-tooltip" src="./public/theme/img/content/previous.svg" alt="Back" ng-shortcut="'meta+shift+left'" ng-shortcut-click data-title="ctrl+shift+left" />
                     </a>
                 </div><!-- Page Header Content -->
                 <div class="page-header-content title-block">
-                    <h1 class="title">View Invoice</h1>
+                    <h1 class="title">View Receipt</h1>
                     <p class="subtitle">
-                        <a href="#!/invoice-pkg/invoice/list">
-                            Invoices
+                        <a href="#!/receipt-pkg/receipt/list">
+                            Receipts
                         </a> /
                         View
                     </p>
@@ -33,7 +33,7 @@ Content Wrap -->
                             <div class="isotope-filters animated" data-animation="fadeInLeft" data-animation-delay="300">
                                 <ul class="nav nav-pills editDetails-tabs">
                                     <li class="active"><a data-target="#general-info" role="tab" data-toggle="tab" aria-expanded="true">Basic Details</a></li>
-                                    <li ><a data-target="#regions" role="tab" data-toggle="tab" aria-expanded="true">Transactions</a></li>
+                                    <!-- <li ><a data-target="#regions" role="tab" data-toggle="tab" aria-expanded="true">Transactions</a></li> -->
                                 </ul>
                             </div><!-- Filters -->
                         </div><!-- Tab Header -->
@@ -46,48 +46,48 @@ Content Wrap -->
                                     <div class="row">
                                         <ul class="grid-row">
                                             <li class="grid-col-3">
-                                                <span class="grid-col-label">Invoice Date</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.invoice_date}}</span>
+                                                <span class="grid-col-label">Receipt Date</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.receipt_date}}</span>
                                             </li>
                                             <li class="grid-col-3">
-                                                <span class="grid-col-label">Invoice Number</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.invoice_number}}</span>
+                                                <span class="grid-col-label">Receipt Number</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.receipt_number}}</span>
                                             </li>
                                            <!--  <li class="grid-col-3">
-                                                <span class="grid-col-label">Invoice of</span>
+                                                <span class="grid-col-label">receipt of</span>
                                                 <span class="grid-col-value"></span>
                                             </li> -->
                                             <li class="grid-col-3">
                                                 <span class="grid-col-label">Account Code</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.account_code}}</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.account_code}}</span>
                                             </li>
                                             <li class="grid-col-3">
                                                 <span class="grid-col-label">Account Name</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.account_name}}</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.account_name}}</span>
                                             </li>
                                             <li class="grid-col-3">
-                                                <span class="grid-col-label">Invoice Amount</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.invoice_amount}}</span>
+                                                <span class="grid-col-label">Receipt Amount</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.amount}}</span>
                                             </li>
                                             <li class="grid-col-3">
-                                                <span class="grid-col-label">Received Amount</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.received_amount}}</span>
+                                                <span class="grid-col-label">Settlement Amount</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.settled_amount}}</span>
                                             </li>
                                             <li class="grid-col-3">
-                                                <span class="grid-col-label">Balance Amount</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.balance_amount}}</span>
+                                                <span class="grid-col-label">Available Amount</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.balance_amount}}</span>
                                             </li>
                                             <li class="grid-col-3">
                                                 <span class="grid-col-label">Description</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.remarks}}</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.description}}</span>
                                             </li>
                                             <li class="grid-col-3">
                                                 <span class="grid-col-label">Status</span>
-                                                <span class="grid-col-value">{{$ctrl.invoice.status_name}}</span>
+                                                <span class="grid-col-value">{{$ctrl.receipt.status_name}}</span>
                                             </li>
                                            
                                         </ul>
-                                        <div class=" tab-pane-footer">
+                                        <!-- <div class=" tab-pane-footer">
                                             <div class="row">
                                                 <div class="col-md-12">
                                                     <a class="btn btn-secondary btn-nxt">
@@ -95,7 +95,7 @@ Content Wrap -->
                                                     </a>
                                                 </div>
                                             </div>
-                                        </div><!-- Tab Footer -->
+                                        </div> -->
                                     </div><!-- Row -->
                                 </div><!-- Tab Pane Wrap -->
                             </div><!-- Tab Pane -->
@@ -117,7 +117,7 @@ Content Wrap -->
                                                     <tbody>
                                                         <tr ng-repeat="(index, transaction) in $ctrl.transactions">
                                                             <td>
-                                                                <span class="info">{{transaction.invoice_date}}</span>
+                                                                <span class="info">{{transaction.receipt_date}}</span>
                                                             </td>
                                                             <!-- <td>
                                                                 <span class="info">{{transaction.type_name}}</span>

@@ -16,6 +16,7 @@ app.component('receiptList', {
             ).then(function(response) {
                 if(response.data.success){
                     self.status = response.data.status;
+                    self.receipt_of = response.data.receipt_of;
                     self.account_code = response.data.account_code;
                     self.account_name = response.data.account_name;
                     self.config_status = response.data.config_status;
@@ -77,6 +78,7 @@ app.component('receiptList', {
                 type: "GET",
                 dataType: "json",
                 data: function(d) {
+                    d.receipt_of_id = self.receipt_of_id;
                     d.account_name = self.account_name;
                     d.account_code = self.account_code;
                     d.receipt_number = self.receipt_number;
@@ -89,11 +91,11 @@ app.component('receiptList', {
                 { data: 'receipt_date', searchable: false},
                 { data: 'receipt_number', name: 'receipts.permanent_receipt_no' },
                 { data: 'receipt_of_name', name: 'configs.name' },
-                // { data: 'account_code', name: 'customers.code', searchable: false },
-                // { data: 'account_name', name: 'customers.name', searchable: false },
-                // { data: 'receipt_amount',  searchable: false },
-                // { data: 'received_amount',  searchable: false },
-                // { data: 'balance_amount',  searchable: false },
+                { data: 'account_code', name: 'customers.code', searchable: false },
+                { data: 'account_name', name: 'customers.name', searchable: false },
+                { data: 'amount',  searchable: false },
+                { data: 'settled_amount',  searchable: false },
+                { data: 'balance_amount',  searchable: false },
                 { data: 'description', name: 'receipts.description' },
                 { data: 'status_name', name: 'configs.name' },
             ],
@@ -132,11 +134,12 @@ app.component('receiptList', {
 
         //DELETE
         $scope.deleteReceipt = function($id) {
-            alert();
+            alert($id);
             $('#receipt_id').val($id);
         }
         $scope.deleteConfirm = function() {
             $id = $('#receipt_id').val();
+            console.log($id);
             $http.get(
                 laravel_routes['deleteReceiptData'], {
                     params: {
@@ -173,6 +176,7 @@ app.component('receiptList', {
             self.account_name  = '';
             self.receipt_number = '';
             self.config_status = '';
+            self.receipt_of_id='';
             $('#daterange1').val(null);
             datatables.fnFilter();
         }
@@ -201,14 +205,14 @@ app.component('receiptView', {
         self.city_permission = self.hasPermission('cities');*/
         self.angular_routes = angular_routes;
         $http.get(
-            laravel_routes['getreceiptViewData'], {
+            laravel_routes['getReceiptViewData'], {
                 params: {
                     id: $routeParams.id,
                 }
             }
         ).then(function(response) {
             self.receipt = response.data.receipt;
-            self.transactions = response.data.transactions;
+            //self.transactions = response.data.transactions;
         });
         /* Tab Funtion */
         $('.btn-nxt').on("click", function() {

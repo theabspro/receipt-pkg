@@ -27,13 +27,12 @@
                 <div class="page-header-content search-block">
                     <div class="search_filter">
                         <label>
-                            <input type="search" id="search_state" class="form-control" placeholder="Search" autofocus />
+                            <input type="search" id="search_receipt" class="form-control" placeholder="Search" autofocus />
                             <button class="btn-clear my-tooltip" ng-click="clear_search()" ng-shortcut="'meta+shift+c'" ng-shortcut-click data-title="ctrl+shift+c">Clear</button>
                         </label>
                     </div><!-- Search Filter -->
                 </div><!-- Page Header Content -->
-                <div class="page-header-content button-block" ng-show="$ctrl.add_permission">
-                    <a href="#!/location-pkg/state/add" class="btn btn-primary my-tooltip" ng-shortcut="'meta+shift+n'" ng-shortcut-click data-title="ctrl+shift+n">Add New</a>
+                <div class="page-header-content button-block">
                 </div><!-- Page Header Content -->
             </div><!-- Page Header Content Right -->
         </div><!-- Page Header Inner -->
@@ -49,11 +48,11 @@
                                 <th>Receipt Date</th>
                                 <th>Receipt Number</th>
                                 <th>Receipt of</th>
-                               <!--  <th>Account Code</th>
+                                <th>Account Code</th>
                                 <th>Account Name</th>
                                 <th>Receipt Amount</th>
                                 <th>Settlement Amount</th>
-                                <th>Available Payment</th> -->
+                                <th>Available Payment</th>
                                 <th>Description</th>
                                 <th>Status</th>
                             </tr>
@@ -84,7 +83,21 @@
                     <div class="col-md-6">
                         <div class="input-text form-group">
                             <label>Receipt Number</label>
-                            <input type="text" class="form-control" name="name" ng-keyup="loadDT()" placeholder="Enter Receipt Number" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.Receipt_number">
+                            <input type="text" class="form-control" name="name" ng-keyup="loadDT()" placeholder="Enter Receipt Number" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.receipt_number">
+                        </div><!-- Field -->
+                    </div><!-- Column -->
+                    <div class="col-md-6">
+                        <div class="input-text form-group">
+                            <label>Receipt Of</label>
+                            <md-select ng-model="$ctrl.receipt_of_id" md-on-close="clearSearchTerm()" data-md-container-class="selectdemoSelectHeader" placeholder="Select Receipt Of"  ng-change="loadDT()">
+                                <md-select-header class="demo-select-header">
+                                    <input ng-model="searchTerm" type="search" placeholder="Search for a Receipt Of" class="demo-header-searchbox md-text">
+                                </md-select-header>
+                                <md-optgroup>
+                                    <md-option ng-value="receipt_of.id" ng-repeat="receipt_of in $ctrl.receipt_of | filter:searchTerm">{{receipt_of.name}}</md-option>
+                                </md-optgroup>
+                            </md-select>
+                            <input type="hidden" ng-model="$ctrl.receipt_of_id" class="form-control" name="receipt_of" id="receipt_of" value="">
                         </div><!-- Field -->
                     </div><!-- Column -->
                     <div class="col-md-6">
