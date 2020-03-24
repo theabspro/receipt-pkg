@@ -30,7 +30,12 @@ app.component('receiptList', {
             window.location = "#!/page-permission-denied";
             return false;
         }*/
-
+        self.account_search = '';
+        if(self.receipt_of==7621){
+            self.account_search= 'vendors.name';
+        }else if(self.receipt_of==7620){
+            self.account_search= 'customers.name';
+        }
         $('.docDatePicker').bootstrapDP({
             endDate: 'today',
             todayHighlight: true
@@ -87,17 +92,17 @@ app.component('receiptList', {
                 },
             },
             columns: [
-                { data: 'action', class: 'action', name: 'action', searchable: false },
+                { data: 'action', class: 'action', searchable: false },
                 { data: 'receipt_date', searchable: false},
                 { data: 'receipt_number', name: 'receipts.permanent_receipt_no' },
-                { data: 'receipt_of_name', name: 'configs.name' },
-                { data: 'account_code', name: 'customers.code', searchable: false },
-                { data: 'account_name', name: 'customers.name', searchable: false },
+                { data: 'receipt_of_name', name: 'receipt_ofs.name', searchable: true },
+                { data: 'account_code', searchable: false },
+                { data: 'account_name',searchable: false },
                 { data: 'amount',  searchable: false },
                 { data: 'settled_amount',  searchable: false },
                 { data: 'balance_amount',  searchable: false },
-                { data: 'description', name: 'receipts.description' },
-                { data: 'status_name', name: 'configs.name' },
+                { data: 'description', name: 'receipts.description', searchable: true },
+                { data: 'status_name', name: 'configs.name' , searchable: true},
             ],
             "infoCallback": function(settings, start, end, max, total, pre) {
                 $('#table_info').html(total)

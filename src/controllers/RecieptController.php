@@ -24,8 +24,8 @@ class ReceiptController extends Controller {
 
 	public function getReceiptSessionData(){
 
-		$this->data['status'] = Config::select('id','name')->get();
-		$this->data['receipt_of'] = Config::select('id','name')->where('config_type_id',30)->get();
+		$this->data['status'] = Config::select('id','name')->get()->prepend(['id' => '','name' => 'Select Status']);
+		$this->data['receipt_of'] = Config::select('id','name')->where('config_type_id',30)->get()->prepend(['id' => '','name' => 'Select Receipt Of']);
 		$this->data['search_invoice'] = Session::get('search_invoice');
 		$this->data['account_name'] = Session::get('account_name');
 		$this->data['account_code'] = Session::get('account_code');
@@ -50,7 +50,6 @@ class ReceiptController extends Controller {
 			$start_date = $date_range[0];
 			$end_date = $date_range[1];
 		}
-		
 		$receipts = Receipt::withTrashed()->select(
 				DB::raw('IF(receipts.date IS NULL,"NA",DATE_FORMAT(receipts.date,"%d-%m-%Y")) as receipt_date'),
 				'receipts.receipt_of_id',
@@ -63,18 +62,14 @@ class ReceiptController extends Controller {
 				DB::raw('format(receipts.settled_amount,0,"en_IN") as settled_amount'),
 				DB::raw('format(receipts.balance_amount,0,"en_IN") as balance_amount'),
 				DB::raw('IF(configs.name IS NULL,"NA",configs.name) as status_name'),
-				'receipts.permanent_receipt_no'
+				'receipts.permanent_receipt_no',
+				'receipts.deleted_at'
 			)
 			->leftJoin('configs as receipt_ofs','receipts.receipt_of_id','=','receipt_ofs.id')
 			->leftJoin('configs','receipts.status_id','=','configs.id')
 			->leftJoin('customers','receipts.entity_id','=','customers.id')
 			->leftJoin('vendors','receipts.entity_id','=','vendors.id')
 			->where('receipts.company_id', Auth::user()->company_id)
-			// ->where(function ($query) use ($request) {
-			// 	if (!empty($request->account_code)) {
-			// 		$query->where('receipts.code', 'LIKE',$request->account_code);
-			// 	}
-			// })
 			->where(function ($query) use ($request) {
 				if (!empty($request->receipt_number)) {
 					$query->where('receipts.permanent_receipt_no', 'LIKE',$request->receipt_number);
@@ -85,7 +80,6 @@ class ReceiptController extends Controller {
 					$query->where('receipts.date','>=',$start_date)->where('receipts.date','<=',$end_date);
 				}
 			});
-
 			if($request->receipt_of_id){
 				$receipts = $receipts->where('receipts.receipt_of_id',$request->receipt_of_id);
 			}
@@ -99,7 +93,7 @@ class ReceiptController extends Controller {
 				$receipts = $receipts->where('vendors.code','LIKE',$request->account_code);
 			}
 			if($request->account_name && $request->receipt_of_id==7621){
-				$receipts = $receipts->where('vendors.code','LIKE',$request->account_name);
+				$receipts = $receipts->where('vendors.name','LIKE',$request->account_name);
 			}
 		return Datatables::of($receipts)
 		->addColumn('action', function ($receipts) {
@@ -108,12 +102,12 @@ class ReceiptController extends Controller {
 			$view = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye.svg');
 			$view_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye-active.svg');
 			$output = '';
-			//if (Entrust::can('view-invoice')) {
+			if (Entrust::can('receipts')) {
 				$output .= '<a href="#!/receipt-pkg/receipt/view/' . $receipts->id . '" id = "" title="view"><img src="' . $view . '" alt="Edit" class="img-responsive" onmouseover=this.src="' . $view_active . '" onmouseout=this.src="' . $view . '"></a>';
-			/*}
-			if (Entrust::can('delete-invoice')) {*/
+			}
+			if (Entrust::can('delete-receipt')) {
 				$output .= '<a href="javascript:;" data-toggle="modal" data-target="#receipts-delete-modal" onclick="angular.element(this).scope().deleteReceipt(' . $receipts->id . ')" title="Delete"><img src="' . $img_delete . '" alt="Delete" class="img-responsive delete" onmouseover=this.src="' . $img_delete_active . '" onmouseout=this.src="' . $img_delete . '"></a>';
-			/*}*/
+			}
 			return $output;
 		})
 		
@@ -127,13 +121,14 @@ class ReceiptController extends Controller {
 			return $account_data ? $account_data->name : '-';
 		})
 		->addColumn('account_code', function ($receipts){
+			$status = is_null($receipts->deleted_at) ? 'green' : 'red';
 			$account_data='';
 			if($receipts->receipt_of_id == 7620){
 				$account_data = Customer::where('id',$receipts->entity_id)->first();
 			}elseif($receipts->receipt_of_id == 7621){
 				$account_data = Vendor::where('id',$receipts->entity_id)->first();
 			}
-			return $account_data ? $account_data->code : '-';
+			return $account_data ? '<span class="status-indicator ' . $status . '"></span>' . $account_data->code : '<span class="status-indicator ' . $status . '"></span>' . 'NA';
 		})
 		->make(true);
 	}
@@ -200,7 +195,7 @@ class ReceiptController extends Controller {
 	public function deleteReceiptData(Request $request) {
 		DB::beginTransaction();
 		try {
-			$invoice = Receipt::where('id', $request->id)->forceDelete();
+			$invoice = Receipt::where('id', $request->id)->delete();
 			//$invoice_details = DB::table('invoice_details')->where('invoice_id', $request->id)->delete();
 			if ($invoice) {
 				$activity = new ActivityLog;
