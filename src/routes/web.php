@@ -6,4 +6,5 @@ Route::group(['namespace' => 'Abs\ReceiptPkg', 'middleware' => ['web', 'auth'], 
 	Route::get('/receipt/get-view-data', 'ReceiptController@getReceiptViewData')->name('getReceiptViewData');
 	Route::get('/receipt/get-session-data', 'ReceiptController@getReceiptSessionData')->name('getReceiptSessionData');
 	Route::get('/receipt/delete', 'ReceiptController@deleteReceiptData')->name('deleteReceiptData');
+	Route::match(['get', 'post'], '/receipt/get', 'ReceiptController@getReceipts')->name('getReceipts');
 });

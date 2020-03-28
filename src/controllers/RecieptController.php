@@ -6,7 +6,10 @@ use App\ActivityLog;
 use App\Config;
 use App\Customer;
 use App\Http\Controllers\Controller;
+use App\Outlet;
+use App\Sbu;
 use App\Vendor;
+use Artisaninweb\SoapWrapper\SoapWrapper;
 use Auth;
 use Carbon\Carbon;
 use DB;
@@ -17,14 +20,16 @@ use Yajra\Datatables\Datatables;
 
 class ReceiptController extends Controller {
 
-	public function __construct() {
+	public function __construct(SoapWrapper $soapWrapper) {
 		$this->data['theme'] = config('custom.admin_theme');
+		$this->company_id = config('custom.company_id');
+		$this->soapWrapper = $soapWrapper;
 	}
 
 	public function getReceiptSessionData() {
 
-		$this->data['status'] = Config::select('id','name')->get()->prepend(['id' => '','name' => 'Select Status']);
-		$this->data['receipt_of'] = Config::select('id','name')->where('config_type_id',30)->get()->prepend(['id' => '','name' => 'Select Receipt Of']);
+		$this->data['status'] = Config::select('id', 'name')->get()->prepend(['id' => '', 'name' => 'Select Status']);
+		$this->data['receipt_of'] = Config::select('id', 'name')->where('config_type_id', 30)->get()->prepend(['id' => '', 'name' => 'Select Receipt Of']);
 
 		$this->data['search_invoice'] = Session::get('search_invoice');
 		$this->data['account_name'] = Session::get('account_name');
@@ -51,24 +56,24 @@ class ReceiptController extends Controller {
 			$end_date = $date_range[1];
 		}
 		$receipts = Receipt::withTrashed()->select(
-				DB::raw('IF(receipts.date IS NULL,"NA",DATE_FORMAT(receipts.date,"%d-%m-%Y")) as receipt_date'),
-				'receipts.receipt_of_id',
-				'receipts.entity_id as entity_id',
-				'receipts.id as id',
-				DB::raw('IF(receipts.description IS NULL,"NA",receipts.description) as description'),
-				DB::raw('IF(receipts.permanent_receipt_no IS NULL,"NA",receipts.permanent_receipt_no) as receipt_number'),
-				DB::raw('IF(receipt_ofs.name IS NULL,"NA",receipt_ofs.name) as receipt_of_name'),
-				DB::raw('format(receipts.amount,0,"en_IN") as amount'),
-				DB::raw('format(receipts.settled_amount,0,"en_IN") as settled_amount'),
-				DB::raw('format(receipts.balance_amount,0,"en_IN") as balance_amount'),
-				DB::raw('IF(configs.name IS NULL,"NA",configs.name) as status_name'),
-				'receipts.permanent_receipt_no',
-				'receipts.deleted_at'
-			)
-			->leftJoin('configs as receipt_ofs','receipts.receipt_of_id','=','receipt_ofs.id')
-			->leftJoin('configs','receipts.status_id','=','configs.id')
-			->leftJoin('customers','receipts.entity_id','=','customers.id')
-			->leftJoin('vendors','receipts.entity_id','=','vendors.id')
+			DB::raw('IF(receipts.date IS NULL,"NA",DATE_FORMAT(receipts.date,"%d-%m-%Y")) as receipt_date'),
+			'receipts.receipt_of_id',
+			'receipts.entity_id as entity_id',
+			'receipts.id as id',
+			DB::raw('IF(receipts.description IS NULL,"NA",receipts.description) as description'),
+			DB::raw('IF(receipts.permanent_receipt_no IS NULL,"NA",receipts.permanent_receipt_no) as receipt_number'),
+			DB::raw('IF(receipt_ofs.name IS NULL,"NA",receipt_ofs.name) as receipt_of_name'),
+			DB::raw('format(receipts.amount,0,"en_IN") as amount'),
+			DB::raw('format(receipts.settled_amount,0,"en_IN") as settled_amount'),
+			DB::raw('format(receipts.balance_amount,0,"en_IN") as balance_amount'),
+			DB::raw('IF(configs.name IS NULL,"NA",configs.name) as status_name'),
+			'receipts.permanent_receipt_no',
+			'receipts.deleted_at'
+		)
+			->leftJoin('configs as receipt_ofs', 'receipts.receipt_of_id', '=', 'receipt_ofs.id')
+			->leftJoin('configs', 'receipts.status_id', '=', 'configs.id')
+			->leftJoin('customers', 'receipts.entity_id', '=', 'customers.id')
+			->leftJoin('vendors', 'receipts.entity_id', '=', 'vendors.id')
 			->where('receipts.company_id', Auth::user()->company_id)
 
 			->where(function ($query) use ($request) {
@@ -81,57 +86,57 @@ class ReceiptController extends Controller {
 					$query->where('receipts.date', '>=', $start_date)->where('receipts.date', '<=', $end_date);
 				}
 			});
-			if($request->receipt_of_id){
-				$receipts = $receipts->where('receipts.receipt_of_id',$request->receipt_of_id);
-			}
-			if($request->receipt_of_id==7620 && $request->account_code){
-				$receipts = $receipts->where('customers.code','LIKE',$request->account_code);
-			}
-			if($request->receipt_of_id==7620 &&$request->account_name){
-				$receipts = $receipts->where('customers.name','LIKE',$request->account_name);
-			}
-			if($request->account_code && $request->receipt_of_id==7621){
-				$receipts = $receipts->where('vendors.code','LIKE',$request->account_code);
-			}
-			if($request->account_name && $request->receipt_of_id==7621){
-				$receipts = $receipts->where('vendors.name','LIKE',$request->account_name);
-			}
+		if ($request->receipt_of_id) {
+			$receipts = $receipts->where('receipts.receipt_of_id', $request->receipt_of_id);
+		}
+		if ($request->receipt_of_id == 7620 && $request->account_code) {
+			$receipts = $receipts->where('customers.code', 'LIKE', $request->account_code);
+		}
+		if ($request->receipt_of_id == 7620 && $request->account_name) {
+			$receipts = $receipts->where('customers.name', 'LIKE', $request->account_name);
+		}
+		if ($request->account_code && $request->receipt_of_id == 7621) {
+			$receipts = $receipts->where('vendors.code', 'LIKE', $request->account_code);
+		}
+		if ($request->account_name && $request->receipt_of_id == 7621) {
+			$receipts = $receipts->where('vendors.name', 'LIKE', $request->account_name);
+		}
 		return Datatables::of($receipts)
-		->addColumn('action', function ($receipts) {
-			$img_delete = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-default.svg');
-			$img_delete_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-active.svg');
-			$view = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye.svg');
-			$view_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye-active.svg');
-			$output = '';
-			if (Entrust::can('receipts')) {
-				$output .= '<a href="#!/receipt-pkg/receipt/view/' . $receipts->id . '" id = "" title="view"><img src="' . $view . '" alt="Edit" class="img-responsive" onmouseover=this.src="' . $view_active . '" onmouseout=this.src="' . $view . '"></a>';
-			}
-			if (Entrust::can('delete-receipt')) {
-				$output .= '<a href="javascript:;" data-toggle="modal" data-target="#receipts-delete-modal" onclick="angular.element(this).scope().deleteReceipt(' . $receipts->id . ')" title="Delete"><img src="' . $img_delete . '" alt="Delete" class="img-responsive delete" onmouseover=this.src="' . $img_delete_active . '" onmouseout=this.src="' . $img_delete . '"></a>';
-			}
-			return $output;
-		})
-		
-		->addColumn('account_name', function ($receipts){
-			$account_data='';
-			if($receipts->receipt_of_id == 7620){
-				$account_data = Customer::where('id',$receipts->entity_id)->first();
-			}elseif($receipts->receipt_of_id == 7621){
-				$account_data = Vendor::where('id',$receipts->entity_id)->first();
-			}
-			return $account_data ? $account_data->name : '-';
-		})
-		->addColumn('account_code', function ($receipts){
-			$status = is_null($receipts->deleted_at) ? 'green' : 'red';
-			$account_data='';
-			if($receipts->receipt_of_id == 7620){
-				$account_data = Customer::where('id',$receipts->entity_id)->first();
-			}elseif($receipts->receipt_of_id == 7621){
-				$account_data = Vendor::where('id',$receipts->entity_id)->first();
-			}
-			return $account_data ? '<span class="status-indicator ' . $status . '"></span>' . $account_data->code : '<span class="status-indicator ' . $status . '"></span>' . 'NA';
-		})
-		->make(true);
+			->addColumn('action', function ($receipts) {
+				$img_delete = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-default.svg');
+				$img_delete_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/delete-active.svg');
+				$view = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye.svg');
+				$view_active = asset('public/themes/' . $this->data['theme'] . '/img/content/table/eye-active.svg');
+				$output = '';
+				if (Entrust::can('receipts')) {
+					$output .= '<a href="#!/receipt-pkg/receipt/view/' . $receipts->id . '" id = "" title="view"><img src="' . $view . '" alt="Edit" class="img-responsive" onmouseover=this.src="' . $view_active . '" onmouseout=this.src="' . $view . '"></a>';
+				}
+				if (Entrust::can('delete-receipt')) {
+					$output .= '<a href="javascript:;" data-toggle="modal" data-target="#receipts-delete-modal" onclick="angular.element(this).scope().deleteReceipt(' . $receipts->id . ')" title="Delete"><img src="' . $img_delete . '" alt="Delete" class="img-responsive delete" onmouseover=this.src="' . $img_delete_active . '" onmouseout=this.src="' . $img_delete . '"></a>';
+				}
+				return $output;
+			})
+
+			->addColumn('account_name', function ($receipts) {
+				$account_data = '';
+				if ($receipts->receipt_of_id == 7620) {
+					$account_data = Customer::where('id', $receipts->entity_id)->first();
+				} elseif ($receipts->receipt_of_id == 7621) {
+					$account_data = Vendor::where('id', $receipts->entity_id)->first();
+				}
+				return $account_data ? $account_data->name : '-';
+			})
+			->addColumn('account_code', function ($receipts) {
+				$status = is_null($receipts->deleted_at) ? 'green' : 'red';
+				$account_data = '';
+				if ($receipts->receipt_of_id == 7620) {
+					$account_data = Customer::where('id', $receipts->entity_id)->first();
+				} elseif ($receipts->receipt_of_id == 7621) {
+					$account_data = Vendor::where('id', $receipts->entity_id)->first();
+				}
+				return $account_data ? '<span class="status-indicator ' . $status . '"></span>' . $account_data->code : '<span class="status-indicator ' . $status . '"></span>' . 'NA';
+			})
+			->make(true);
 
 	}
 
@@ -218,5 +223,88 @@ class ReceiptController extends Controller {
 			DB::rollBack();
 			return response()->json(['success' => false, 'errors' => ['Exception Error' => $e->getMessage()]]);
 		}
+	}
+
+	public function getReceipts(Request $request) {
+		$this->soapWrapper->add('Receipt', function ($service) {
+			$service
+				->wsdl('http://tvsapp.tvs.in/MobileAPi/WebService1.asmx?wsdl')
+				->trace(true);
+		});
+
+		$params = ['ACCOUNTNUM' => $request->account_code, 'VOUCHER' => $request->receipt_number];
+		$getResult = $this->soapWrapper->call('Receipt.GetCustomerReceipt', [$params]);
+		$customer_receipt = json_decode($getResult->GetCustomerReceiptResult, true);
+
+		if (empty($customer_receipt)) {
+			return response()->json(['success' => false, 'error' => 'Receipt not found!.']);
+		}
+		$api_receipts = $customer_receipt['Table'];
+		if (count($api_receipts) == 0) {
+			return response()->json(['success' => false, 'error' => 'Receipt not found!.']);
+		}
+		foreach ($api_receipts as $api_receipt) {
+			$outlet = Outlet::where('code', $api_receipt['OUTLET'])->company()->first();
+			//ISSUE : company filter not added
+			// $outlet = Outlet::where('code', $api_receipt['OUTLET'])->first();
+			//ISSUE : Validation not done
+			if (!$outlet) {
+				return response()->json([
+					'success' => false,
+					'error' => 'Outlet not found : ' . $api_receipt['OUTLET'],
+				]);
+			}
+			$sbu = Sbu::where('name', $api_receipt['BUSINESSUNIT'])->company()->first();
+			//ISSUE : Validation not done
+			if (!$sbu) {
+				return response()->json([
+					'success' => false,
+					'error' => 'Business not found : ' . $api_receipt['BUSINESSUNIT'],
+				]);
+			}
+
+			$receipt = Receipt::firstOrNew([
+				'permanent_receipt_no' => $api_receipt['VOUCHER'],
+				'company_id' => Auth::user()->company_id,
+			]);
+			$receipt->date = $api_receipt['DOCUMENTDATE'];
+			$receipt->outlet_id = $outlet->id;
+			$receipt->sbu_id = $sbu->id;
+			$receipt->description = $api_receipt['TXT'];
+			$receipt->permanent_receipt_no = $api_receipt['VOUCHER'];
+			$receipt->temporary_receipt_no = $api_receipt['VOUCHER'];
+			$receipt->amount = $api_receipt['AMOUNTMST'];
+			$receipt->settled_amount = $api_receipt['SETTLEAMOUNTMST'];
+			$receipt->balance_amount = $api_receipt['BALANCE'];
+			$receipt->save();
+		}
+
+		$receipt->outlet = $outlet;
+		$receipt->sbu = $sbu;
+
+		//ISSUE : laravel feature not used / variable naming
+		// $receipts = Receipt::select(
+		// 	'receipts.id',
+		// 	'receipts.permanent_receipt_no as receipt_no',
+		// 	'receipts.description',
+		// 	'outlets.code as outlet_name',
+		// 	'sbus.name as business_name',
+		// 	'receipts.amount as available_amt',
+		// 	'receipts.balance_amount as balance_amount',
+		// 	DB::raw('DATE_FORMAT(receipts.date,"%d/%m/%Y") as receipt_date')
+		// )
+		// 	->leftjoin('outlets', 'outlets.id', 'receipts.outlet_id')
+		// 	->leftjoin('sbus', 'sbus.id', 'receipts.sbu_id')
+		// 	->where('permanent_receipt_no', $request->receiptNumber)
+		// 	->first()
+		// ;
+		return response()->json([
+			'success' => true,
+			'receipt' => $receipt,
+		]);
+
+		//ISSUE : status & validation
+		// return response()->json(['receipts' => $receipts]);
+
 	}
 }
