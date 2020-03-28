@@ -2,17 +2,14 @@ app.component('receiptList', {
     templateUrl: receipt_list_template_url,
     controller: function($http, $location, HelperService, $scope, $routeParams, $rootScope, $element, $mdSelect) {
         $scope.loading = true;
+        $('#search_receipt').focus();
         var self = this;
         self.theme = admin_theme;
         self.hasPermission = HelperService.hasPermission;
-
          if (!self.hasPermission('receipts')) {
             window.location = "#!/page-permission-denied";
             return false;
         }
-        $('#search_receipt').focus();
-        
-
         $http.get(
                 laravel_routes['getReceiptSessionData']
             ).then(function(response) {
@@ -204,10 +201,10 @@ app.component('receiptView', {
     controller: function($http, HelperService, $scope, $routeParams, $rootScope) {
         var self = this;
         self.hasPermission = HelperService.hasPermission;
-        // if (!self.hasPermission('view-receipt')) {
-        //     window.location = "#!/page-permission-denied";
-        //     return false;
-        // }
+        if (!self.hasPermission('view-receipt')) {
+            window.location = "#!/page-permission-denied";
+            return false;
+        }
         /*self.region_permission = self.hasPermission('regions');
         self.city_permission = self.hasPermission('cities');*/
         self.angular_routes = angular_routes;
