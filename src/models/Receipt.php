@@ -22,7 +22,8 @@ class Receipt extends Model {
 	public function outlet() {
 		return $this->belongsTo('App\Outlet', 'outlet_id');
 	}
-	public function business() {
+
+	public function sbu() {
 		return $this->belongsTo('Abs\BusinessPkg\Sbu', 'sbu_id');
 	}
 
