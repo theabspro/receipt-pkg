@@ -51,7 +51,7 @@ class ReceiptController extends Controller {
 		$start_date = '';
 		$end_date = '';
 		if (!empty($request->receipt_date)) {
-			$date_range = explode(' - ', $request->receipt_date);
+			$date_range = explode(' to ', $request->receipt_date);
 			$start_date = $date_range[0];
 			$end_date = $date_range[1];
 		}
@@ -83,7 +83,7 @@ class ReceiptController extends Controller {
 			})
 			->where(function ($query) use ($request, $start_date, $end_date) {
 				if (!empty($request->receipt_date) && ($start_date && $end_date)) {
-					$query->where('receipts.date', '>=', $start_date)->where('receipts.date', '<=', $end_date);
+					$query->where('receipts.date', '>=', date('Y-m-d', strtotime($start_date)))->where('receipts.date', '<=', date('Y-m-d', strtotime($end_date)));
 				}
 			});
 		if ($request->receipt_of_id) {

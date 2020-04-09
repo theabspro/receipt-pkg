@@ -76,20 +76,25 @@
                     <div class="col-md-6">
                             <div class="input-text form-group mb-0">
                                 <label>Receipt Date</label>
+                            <div class="input-group date">
                                 <input date-range-picker id="daterange1" name="daterange" class="form-control date-picker" type="text" ng-model="$ctrl.daterange1" value="{{$ctrl.daterange1}}" placeholder="Select Receipt Date"/>
-                                <!-- Input Group -->
+                                 <span class="input-group-addon">
+                                    <img class="img-responsive" src="./public/theme/img/content/calender-gray-icon.svg" alt="Calendar Image" />
+                                </span>
+                            </div>
+                            <!-- Input Group -->
                             </div>
                         </div><!-- Column -->
                     <div class="col-md-6">
                         <div class="input-text form-group">
                             <label>Receipt Number</label>
-                            <input type="text" class="form-control" name="name" ng-keyup="loadDT()" placeholder="Enter Receipt Number" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.receipt_number">
+                            <input type="text" class="form-control" name="receipt_number" placeholder="Enter Receipt Number" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.receipt_number" id="receipt_number">
                         </div><!-- Field -->
                     </div><!-- Column -->
                     <div class="col-md-6">
                         <div class="input-text form-group">
                             <label>Receipt Of</label>
-                            <md-select ng-model="$ctrl.receipt_of_id" md-on-close="clearSearchTerm()" data-md-container-class="selectdemoSelectHeader" placeholder="Select Receipt Of"  ng-change="loadDT()">
+                            <md-select ng-model="$ctrl.receipt_of_id" md-on-close="clearSearchTerm()" data-md-container-class="selectdemoSelectHeader" placeholder="Select Receipt Of"  ng-change="onSelectedReceipt($ctrl.receipt_of_id)">
                                 <md-select-header class="demo-select-header">
                                     <input ng-model="searchTerm" type="search" placeholder="Search for a Receipt Of" class="demo-header-searchbox md-text">
                                 </md-select-header>
@@ -103,19 +108,19 @@
                     <div class="col-md-6">
                         <div class="input-text form-group">
                             <label>Account Code</label>
-                            <input type="text" class="form-control" ng-keyup="loadDT()" name="account_code" id="account_code" placeholder="Enter Account Code" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.account_code">
+                            <input type="text" class="form-control" name="account_code" id="account_code" placeholder="Enter Account Code" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.account_code">
                         </div><!-- Field -->
                     </div><!-- Column -->
                     <div class="col-md-6">
                         <div class="input-text form-group">
                             <label>Account Name</label>
-                            <input type="text" class="form-control" ng-keyup="loadDT()" name="name" id="account_name" placeholder="Enter Account Name" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.account_name">
+                            <input type="text" class="form-control" name="name" id="account_name" placeholder="Enter Account Name" aria-invalid="false" autocomplete="off"  ng-model="$ctrl.account_name">
                         </div><!-- Field -->
                     </div><!-- Column -->
                     <div class="col-md-6">
                         <div class="input-text form-group">
                             <label>Status</label>
-                            <md-select ng-model="$ctrl.config_status" md-on-close="clearSearchTerm()" data-md-container-class="selectdemoSelectHeader" ng-change="onSelectedStatus($ctrl.config_status)" placeholder="Select Status"  ng-change="loadDT()">
+                            <md-select ng-model="$ctrl.config_status" md-on-close="clearSearchTerm()" data-md-container-class="selectdemoSelectHeader" ng-change="onSelectedStatus($ctrl.config_status)" placeholder="Select Status">
                                 <md-select-header class="demo-select-header">
                                     <input ng-model="searchTerm1" type="search" placeholder="Search for a Status" class="demo-header-searchbox md-text">
                                 </md-select-header>
@@ -127,7 +132,7 @@
                         </div><!-- Field -->
                     </div><!-- Column -->
                     <div class="col-md-12">
-                        <button type="button" class="btn btn-rose my-tooltip" ng-click="reset_filter();$ctrl.filter_state_country='';$ctrl.filter_state_status=''" ng-shortcut="'meta+shift+t'" ng-shortcut-click data-title="ctrl+shift+t">Reset Filter</button>
+                        <button type="button" class="btn btn-rose my-tooltip" ng-click="reset_filter();$ctrl.daterange1='';$ctrl.receipt_number='';$ctrl.receipt_of_id='';$ctrl.account_code='';$ctrl.account_name='';$ctrl.config_status=''" ng-shortcut="'meta+shift+t'" ng-shortcut-click data-title="ctrl+shift+t">Reset Filter</button>
                     </div>
                 </div><!-- Row -->
             </div><!-- Modal Body -->
