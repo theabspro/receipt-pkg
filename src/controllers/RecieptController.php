@@ -267,15 +267,18 @@ class ReceiptController extends Controller {
 				'permanent_receipt_no' => $api_receipt['VOUCHER'],
 				'company_id' => Auth::user()->company_id,
 			]);
+			$receipt_amount = ($api_receipt['AMOUNTMST'] < 0) ? $api_receipt['AMOUNTMST'] * -1 : $api_receipt['AMOUNTMST'];
+			$settle_amount = ($api_receipt['SETTLEAMOUNTMST'] < 0) ? $api_receipt['SETTLEAMOUNTMST'] * -1 : $api_receipt['SETTLEAMOUNTMST'];
+			$balance_amount = ($api_receipt['BALANCE'] < 0) ? $api_receipt['BALANCE'] * -1 : $api_receipt['BALANCE'];
 			$receipt->date = $api_receipt['DOCUMENTDATE'];
 			$receipt->outlet_id = $outlet->id;
 			$receipt->sbu_id = $sbu->id;
 			$receipt->description = $api_receipt['TXT'];
 			$receipt->permanent_receipt_no = $api_receipt['VOUCHER'];
 			$receipt->temporary_receipt_no = $api_receipt['VOUCHER'];
-			$receipt->amount = $api_receipt['AMOUNTMST'];
-			$receipt->settled_amount = $api_receipt['SETTLEAMOUNTMST'];
-			$receipt->balance_amount = $api_receipt['BALANCE'];
+			$receipt->amount = $receipt_amount;
+			$receipt->settled_amount = $settle_amount;
+			$receipt->balance_amount = $balance_amount;
 			$receipt->save();
 		}
 
