@@ -244,7 +244,7 @@ class ReceiptController extends Controller {
 			return response()->json(['success' => false, 'error' => 'Receipt not found!.']);
 		}
 		foreach ($api_receipts as $api_receipt) {
-			$outlet = Outlet::where('code', $api_receipt['OUTLET'])->company()->first();
+			$outlet = Outlet::where('code', $api_receipt['OUTLET'])->where('company_id', Auth::user()->company_id)->first();
 			//ISSUE : company filter not added
 			// $outlet = Outlet::where('code', $api_receipt['OUTLET'])->first();
 			//ISSUE : Validation not done
@@ -254,7 +254,7 @@ class ReceiptController extends Controller {
 					'error' => 'Outlet not found : ' . $api_receipt['OUTLET'],
 				]);
 			}
-			$sbu = Sbu::where('name', $api_receipt['BUSINESSUNIT'])->company()->first();
+			$sbu = Sbu::where('name', $api_receipt['BUSINESSUNIT'])->where('company_id', Auth::user()->company_id)->first();
 			//ISSUE : Validation not done
 			if (!$sbu) {
 				return response()->json([
