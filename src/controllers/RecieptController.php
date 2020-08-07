@@ -228,7 +228,7 @@ class ReceiptController extends Controller {
 	public function getReceipts(Request $request) {
 		$this->soapWrapper->add('Receipt', function ($service) {
 			$service
-				->wsdl('http://tvsapp.tvs.in/MobileAPi/WebService1.asmx?wsdl')
+				->wsdl('https://tvsapp.tvs.in/MobileAPi/WebService1.asmx?wsdl')
 				->trace(true);
 		});
 
