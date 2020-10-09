@@ -16,26 +16,26 @@ class ReceiptPkgPermissionSeeder extends Seeder {
 			[
 				'display_order' => 99,
 				'parent' => null,
-				'name' => 'receipts',
-				'display_name' => 'Receipts',
+				'name' => 'receipts-jva',
+				'display_name' => 'Receipts-JVA',
 			],
 			[
 				'display_order' => 1,
-				'parent' => 'receipts',
-				'name' => 'add-receipt',
+				'parent' => 'receipts-jva',
+				'name' => 'add-receipt-jva',
 				'display_name' => 'Add',
 			],
 			[
 				'display_order' => 2,
-				'parent' => 'receipts',
-				'name' => 'view-receipt',
+				'parent' => 'receipts-jva',
+				'name' => 'view-receipt-jva',
 				'display_name' => 'View',
 			],
 			[
 				'display_order' => 3,
-				'parent' => 'receipts',
+				'parent' => 'receipts-jva',
 				'name' => 'delete-receipt',
-				'display_name' => 'Delete',
+				'display_name' => 'Delete-jva',
 			],
 
 		];
