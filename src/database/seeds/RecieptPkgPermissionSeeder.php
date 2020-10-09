@@ -35,7 +35,7 @@ class ReceiptPkgPermissionSeeder extends Seeder {
 				'display_order' => 3,
 				'parent' => 'receipts-jva',
 				'name' => 'delete-receipt',
-				'display_name' => 'Delete-jva',
+				'display_name' => 'Delete-receipt-jva',
 			],
 
 		];
