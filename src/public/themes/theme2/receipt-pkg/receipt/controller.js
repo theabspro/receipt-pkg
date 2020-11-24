@@ -8,13 +8,14 @@ app.component('receiptList', {
         var self = this;
         self.theme = admin_theme;
         self.hasPermission = HelperService.hasPermission;
-        if (!self.hasPermission('receipts')) {
+        if (!self.hasPermission('receipts-jva')) {
             window.location = "#!/page-permission-denied";
             return false;
         }
         $http.get(
             laravel_routes['getReceiptSessionData']
         ).then(function(response) {
+            console.log(response);
             if (response.data.success) {
                 self.status = response.data.status;
                 self.receipt_of = response.data.receipt_of;
@@ -176,11 +177,29 @@ app.component('receiptList', {
                 }
             });
 
-            $('#daterange1').on('apply.daterangepicker', function(ev, picker) {
+            /* DateRange Picker */
+            $('.daterange').daterangepicker({
+                autoUpdateInput: false,
+                locale: {
+                    cancelLabel: 'Clear',
+                    format: "DD-MM-YYYY"
+                }
+            });
+
+            $('.align-left.daterange').daterangepicker({
+                autoUpdateInput: false,
+                "opens": "left",
+                locale: {
+                    cancelLabel: 'Clear',
+                    format: "DD-MM-YYYY"
+                }
+            });
+
+            $('.daterange').on('apply.daterangepicker', function(ev, picker) {
                 $(this).val(picker.startDate.format('DD-MM-YYYY') + ' to ' + picker.endDate.format('DD-MM-YYYY'));
                 dataTables.fnFilter();
             });
-            $('#daterange1').on('cancel.daterangepicker', function(ev, picker) {
+            $('.daterange').on('cancel.daterangepicker', function(ev, picker) {
                 $(this).val('');
             });
 
@@ -239,7 +258,7 @@ app.component('receiptView', {
     controller: function($http, HelperService, $scope, $routeParams, $rootScope) {
         var self = this;
         self.hasPermission = HelperService.hasPermission;
-        if (!self.hasPermission('view-receipt')) {
+        if (!self.hasPermission('view-receipt-jva')) {
             window.location = "#!/page-permission-denied";
             return false;
         }
